@@ -5,7 +5,7 @@
 - А ты?
 
 Имитация выгрузки файлов из внешних источников
-(на самом деле мы просто читаем .csv в delta)
+(на самом деле мы просто читаем .csv в parquet)
 """
 
 from spark_config import get_spark_session
@@ -19,7 +19,8 @@ def bronze_layer():
     df_raw = spark.read.option("header", "true").csv(f"{path}/../data/data.csv")
     table_name = "data"  # file_path.split('/')[-1].split('.')[0]
 
-    df_raw.write.format("parquet").mode("append").save(f"{path}/bronze/{table_name}")
+    # append in real world
+    df_raw.write.mode("overwrite").parquet(f"{path}/bronze/{table_name}")
 
     print(f"Bronze: wrote {df_raw.count()} records into {table_name}")
 
