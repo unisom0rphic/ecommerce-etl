@@ -19,7 +19,7 @@ def bronze_layer():
     df_raw = spark.read.option("header", "true").csv(f"{path}/../data/data.csv")
     table_name = "data"  # file_path.split('/')[-1].split('.')[0]
 
-    # append in real world
+    # should be append in prod
     df_raw.write.mode("overwrite").parquet(f"{path}/bronze/{table_name}")
 
     print(f"Bronze: wrote {df_raw.count()} records into {table_name}")
