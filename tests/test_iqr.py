@@ -15,7 +15,8 @@ from pyspark.sql.types import (
     StructType,
 )
 
-from src.etl_pipeline.silver import remove_outliers
+# TODO: move to utils
+from src.etl_pipeline.gold import remove_outliers
 
 os.environ["PYSPARK_PYTHON"] = sys.executable
 os.environ["PYSPARK_DRIVER_PYTHON"] = sys.executable
