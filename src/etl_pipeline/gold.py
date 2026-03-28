@@ -3,7 +3,25 @@ import pyspark.sql.functions as F
 from pyspark.sql import DataFrame, types
 
 
-def gold_layer(df: DataFrame): ...
+def gold_layer(df: DataFrame):
+    numeric_cols = [
+        f.name for f in df.schema.fields if isinstance(f.dataType, types.NumericType)
+    ]
+    df_enriched = remove_outliers(df, numeric_cols)
+
+    # TODO: feature engineering
+    df_enriched = df_enriched.withColumn(
+        "Revenue", F.col("Quantity") * F.col("UnitPrice")
+    )
+
+    # from pyspark.sql.functions import when
+    # df = df.withColumn("category",
+    #     when(col("age") < 18, "Minor")
+    #     .when(col("age") < 65, "Adult")
+    #     .otherwise("Senior")
+    # )
+
+    return df_enriched
 
 
 def remove_outliers(df: DataFrame, columns: list[str]):
