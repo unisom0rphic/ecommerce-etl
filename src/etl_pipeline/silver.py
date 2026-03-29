@@ -15,4 +15,6 @@ def silver_layer(df: "pyspark.sql.DataFrame") -> "pyspark.sql.DataFrame":
     df_clean = df_clean.withColumn("Month", month(col("InvoiceData")))
     df_clean = df_clean.filter(col("UnitPrice") > 0)
 
+    # TODO: save to the disk, don't return df
+
     return df_clean
