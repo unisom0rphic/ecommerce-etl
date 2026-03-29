@@ -4,6 +4,7 @@ from pyspark.sql import DataFrame, types
 
 
 def gold_layer(df: DataFrame):
+    # Determine numeric columns and remove outliers
     numeric_cols = [
         f.name for f in df.schema.fields if isinstance(f.dataType, types.NumericType)
     ]
