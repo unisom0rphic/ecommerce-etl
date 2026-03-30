@@ -41,7 +41,6 @@ def gold_layer(spark: pyspark.sql.SparkSession, source_path, target_path):
     RANGE_7D = 7 * DAY_SEC
     RANGE_30D = 30 * DAY_SEC
 
-    # TODO: review
     df_enriched = df_enriched.withColumn(
         "Days_Since_Last_Purchase",
         F.datediff(F.col("InvoiceDate"), F.lag("InvoiceDate", 1).over(w_customer)),
@@ -77,11 +76,12 @@ def gold_layer(spark: pyspark.sql.SparkSession, source_path, target_path):
 
     df_enriched = df_enriched.withColumn(
         "Lag_1_Quantity", F.lag("Quantity", 1).over(w_customer)
-    ).withColumn("Lag_7_Quantity", F.lag("Quantity", 7).over(w_customer))
+    )
 
     df_enriched.drop("ts_unix")
 
     # TODO: target column
+
     return df_enriched
 
 
@@ -96,7 +96,7 @@ def cap_outliers(df: DataFrame, columns: list[str]):
     for col_name in columns:
         if not isinstance(df.schema[col_name].dataType, types.NumericType):
             raise ValueError(
-                f"Removing outliers failed: column {col_name} isn't numeric"
+                f"Capping outliers failed: column {col_name} isn't numeric"
             )
 
         Q1 = df.agg(F.percentile_approx(col_name, 0.25)).collect()[0][0]
