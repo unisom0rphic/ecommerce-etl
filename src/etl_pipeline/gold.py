@@ -81,8 +81,8 @@ def gold_layer(spark: pyspark.sql.SparkSession, source_path, target_path):
     df_enriched.drop("ts_unix")
 
     # TODO: target column
-
-    return df_enriched
+    df_enriched.write.mode("overwrite").parquet(target_path)
+    print(f"Bronze: wrote {df_enriched.count()} records into {target_path}")
 
 
 def cap_outliers(df: DataFrame, columns: list[str]):

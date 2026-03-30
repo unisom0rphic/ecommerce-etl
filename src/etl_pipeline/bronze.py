@@ -15,9 +15,8 @@ def bronze_layer(spark, source_path, target_path):
     """
     # read data (from Kafka)
     df_raw = spark.read.option("header", "true").csv(source_path)
-    table_name = "data"
 
     # should be append in prod
     df_raw.write.mode("overwrite").parquet(target_path)
 
-    print(f"Bronze: wrote {df_raw.count()} records into {table_name}")
+    print(f"Bronze: wrote {df_raw.count()} records into {target_path}")

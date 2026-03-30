@@ -23,11 +23,7 @@ def silver_layer(spark, source_path, target_path):
     )
     df_clean = df_clean.filter(F.col("UnitPrice") > 0)
 
-    table_name = "data"
-
     # should be append in prod
     df_clean.write.mode("overwrite").parquet(target_path)
 
-    print(f"Silver: wrote {df_clean.count()} records into {table_name}")
-
-    return df_clean
+    print(f"Silver: wrote {df_clean.count()} records into {target_path}")
