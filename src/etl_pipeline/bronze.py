@@ -8,22 +8,16 @@
 (на самом деле мы просто читаем .csv в parquet)
 """
 
-from spark_config import get_spark_session
 
-
-def bronze_layer():
-    spark = get_spark_session()
-
-    path = spark.conf.get("spark.sql.warehouse.dir")
-
-    df_raw = spark.read.option("header", "true").csv(f"{path}/../data/data.csv")
-    table_name = "data"  # file_path.split('/')[-1].split('.')[0]
+def bronze_layer(spark, source_path, target_path):
+    """
+    Reads data from .csv file (we'll make Kafka later)
+    """
+    # read data (from Kafka)
+    df_raw = spark.read.option("header", "true").csv(source_path)
+    table_name = "data"
 
     # should be append in prod
-    df_raw.write.mode("overwrite").parquet(f"{path}/bronze/{table_name}")
+    df_raw.write.mode("overwrite").parquet(target_path)
 
     print(f"Bronze: wrote {df_raw.count()} records into {table_name}")
-
-
-if __name__ == "__main__":
-    bronze_layer()

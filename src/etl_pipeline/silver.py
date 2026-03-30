@@ -1,20 +1,33 @@
-import pyspark.sql
-from pyspark.sql.functions import col, month, year
+import pyspark.sql.functions as F
+
+from src.etl_pipeline.spark_config import get_spark_session
 
 
-def silver_layer(df: "pyspark.sql.DataFrame") -> "pyspark.sql.DataFrame":
+def silver_layer(spark, source_path, target_path):
     """
-    Bronze layer processing (removes missing values, creates time features)
+    Raw data processing (removes missing values, creates time features)
     Time features are later used for partitioning
     TODO: docs what?
     See docs/? for processing decisions
     """
+    spark = get_spark_session()
+    df = spark.read.parquet(source_path)
+
     df_clean = df.fillna({"CustomerID": "missing", "Description": "unknown"})
     df_clean = df_clean.drop_duplicates()
-    df_clean = df_clean.withColumn("Year", year(col("InvoiceData")))
-    df_clean = df_clean.withColumn("Month", month(col("InvoiceData")))
-    df_clean = df_clean.filter(col("UnitPrice") > 0)
+    df_clean = (
+        df_clean.withColumn("Year", F.year("InvoiceDate"))
+        .withColumn("Month", F.month("InvoiceDate"))
+        .withColumn("Hour", F.hour("InvoiceDate"))
+        .withColumn("Weekday", F.dayofweek("InvoiceDate"))
+    )
+    df_clean = df_clean.filter(F.col("UnitPrice") > 0)
 
-    # TODO: save to the disk, don't return df
+    table_name = "data"
+
+    # should be append in prod
+    df_clean.write.mode("overwrite").parquet(target_path)
+
+    print(f"Silver: wrote {df_clean.count()} records into {table_name}")
 
     return df_clean

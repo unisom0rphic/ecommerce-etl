@@ -12,7 +12,7 @@ from pyspark.sql.types import (
 )
 
 # TODO: move to utils
-from src.etl_pipeline.gold import remove_outliers
+from src.etl_pipeline.gold import cap_outliers
 
 os.environ["PYSPARK_PYTHON"] = sys.executable
 os.environ["PYSPARK_DRIVER_PYTHON"] = sys.executable
@@ -40,7 +40,7 @@ class TestRemoveOutliers(unittest.TestCase):
         schema = StructType([StructField("value", IntegerType(), True)])
         df = self._create_df(data, schema)
 
-        result_df = remove_outliers(df, ["value"])
+        result_df = cap_outliers(df, ["value"])
         result_data = sorted([row.value for row in result_df.collect()])
 
         self.assertNotEqual(result_data[-1], 100)
@@ -54,7 +54,7 @@ class TestRemoveOutliers(unittest.TestCase):
         df = self._create_df(data, schema)
 
         with self.assertRaises(ValueError):
-            remove_outliers(df, ["text_col"])
+            cap_outliers(df, ["text_col"])
 
     def test_no_outliers(self):
         """No outliers -> no changes"""
@@ -62,7 +62,7 @@ class TestRemoveOutliers(unittest.TestCase):
         schema = StructType([StructField("value", IntegerType(), True)])
         df = self._create_df(data, schema)
 
-        result_df = remove_outliers(df, ["value"])
+        result_df = cap_outliers(df, ["value"])
 
         original_values = sorted([row.value for row in df.collect()])
         result_values = sorted([row.value for row in result_df.collect()])
@@ -74,7 +74,7 @@ class TestRemoveOutliers(unittest.TestCase):
         schema = StructType([StructField("value", IntegerType(), True)])
         df = self._create_df([], schema)
 
-        result_df = remove_outliers(df, ["value"])
+        result_df = cap_outliers(df, ["value"])
         self.assertEqual(result_df.count(), 0)
 
     def test_float_values(self):
@@ -83,7 +83,7 @@ class TestRemoveOutliers(unittest.TestCase):
         schema = StructType([StructField("value", FloatType(), True)])
         df = self._create_df(data, schema)
 
-        result_df = remove_outliers(df, ["value"])
+        result_df = cap_outliers(df, ["value"])
         result_data = [row.value for row in result_df.collect()]
 
         self.assertNotIn(100.0, result_data)
@@ -94,7 +94,7 @@ class TestRemoveOutliers(unittest.TestCase):
         schema = StructType([StructField("value", IntegerType(), True)])
         df = self._create_df(data, schema)
 
-        result_df = remove_outliers(df, ["value"])
+        result_df = cap_outliers(df, ["value"])
         result_data = [row.value for row in result_df.collect()]
 
         self.assertNotIn(-100, result_data)
