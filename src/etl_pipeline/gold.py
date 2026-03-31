@@ -1,4 +1,3 @@
-# feature engineering,
 import pyspark.sql
 import pyspark.sql.functions as F
 from pyspark.sql import DataFrame, Window, types
@@ -33,9 +32,11 @@ def gold_layer(spark: pyspark.sql.SparkSession, source_path, target_path):
     # convert to unix for easier windowing logic
     df_enriched = df_enriched.withColumn("ts_unix", F.unix_timestamp("InvoiceDate"))
 
-    # helper columns
     w_customer = Window.partitionBy("CustomerID").orderBy("InvoiceDate")
     w_stock = Window.partitionBy("StockCode").orderBy("InvoiceDate")
+    w_month = Window.partitionBy(
+        "Month_Year"
+    )  # encoding year too so the months from different years don't merge
 
     DAY_SEC = 86400
     RANGE_7D = 7 * DAY_SEC
@@ -78,11 +79,17 @@ def gold_layer(spark: pyspark.sql.SparkSession, source_path, target_path):
         "Lag_1_Quantity", F.lag("Quantity", 1).over(w_customer)
     )
 
+    # target variable
+    df_enriched = df_enriched.withColumn(
+        "Monthly_Revenue", F.sum("Revenue").over(w_month)
+    )
+
     df_enriched.drop("ts_unix")
 
-    # TODO: target column
+    # TODO: for testing we can check schema match
+
     df_enriched.write.mode("overwrite").parquet(target_path)
-    print(f"Bronze: wrote {df_enriched.count()} records into {target_path}")
+    print(f"Gold: wrote {df_enriched.count()} records into {target_path}")
 
 
 def cap_outliers(df: DataFrame, columns: list[str]):

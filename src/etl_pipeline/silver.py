@@ -20,6 +20,7 @@ def silver_layer(spark, source_path, target_path):
         .withColumn("Month", F.month("InvoiceDate"))
         .withColumn("Hour", F.hour("InvoiceDate"))
         .withColumn("Weekday", F.dayofweek("InvoiceDate"))
+        .withColumn("Month_Year", F.date_trunc("month", "InvoiceDate"))
     )
     df_clean = df_clean.filter(F.col("UnitPrice") > 0)
 

@@ -11,7 +11,7 @@
 
 def bronze_layer(spark, source_path, target_path):
     """
-    Reads data from .csv file (we'll make Kafka later)
+    Reads data from .csv file (we'll use Kafka later)
     """
     # read data (from Kafka)
     df_raw = spark.read.option("header", "true").csv(source_path)
