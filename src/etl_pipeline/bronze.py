@@ -19,4 +19,6 @@ def bronze_layer(spark, source_path, target_path):
     # should be append in prod
     df_raw.write.mode("overwrite").parquet(target_path)
 
-    print(f"Bronze: wrote {df_raw.count()} records into {target_path}")
+    total_rows = df_raw.count()
+    print(f"Bronze: wrote {total_rows} records into {target_path}")
+    return total_rows

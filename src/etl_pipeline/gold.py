@@ -89,12 +89,14 @@ def gold_layer(spark: pyspark.sql.SparkSession, source_path, target_path):
     # TODO: for testing we can check schema match
 
     df_enriched.write.mode("overwrite").parquet(target_path)
-    print(f"Gold: wrote {df_enriched.count()} records into {target_path}")
+    total_rows = df_enriched.count()
+    print(f"Gold: wrote {total_rows} records into {target_path}")
+    return total_rows
 
 
 def cap_outliers(df: DataFrame, columns: list[str]):
     """
-    Removes outliers via IQR
+    Caps outliers to the upper/lower bound via IQR
     """
     if not df.count():
         print("WARNING: DataFrame is empty")

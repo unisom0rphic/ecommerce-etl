@@ -27,4 +27,6 @@ def silver_layer(spark, source_path, target_path):
     # should be append in prod
     df_clean.write.mode("overwrite").parquet(target_path)
 
-    print(f"Silver: wrote {df_clean.count()} records into {target_path}")
+    total_rows = df_clean.count()
+    print(f"Silver: wrote {total_rows} records into {target_path}")
+    return total_rows
