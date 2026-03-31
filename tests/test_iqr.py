@@ -1,7 +1,7 @@
 import os
 import sys
-import unittest
 
+import pytest
 from pyspark.sql.session import SparkSession
 from pyspark.sql.types import (
     FloatType,
@@ -19,23 +19,26 @@ os.environ["PYSPARK_DRIVER_PYTHON"] = sys.executable
 os.environ["PYSPARK_DAEMON"] = "false"
 
 
-class TestRemoveOutliers(unittest.TestCase):
+class TestRemoveOutliers:
     @classmethod
-    def setUpClass(cls):
+    def setup_class(cls):
         cls.spark = (
             SparkSession.builder.master("local[1]").appName("IQRTest").getOrCreate()
         )
         cls.spark.sparkContext.setLogLevel("ERROR")
 
     @classmethod
-    def tearDownClass(cls):
+    def teardown_class(cls):
         cls.spark.stop()
+
+    def setup_method(self):
+        self.spark = self.__class__.spark
 
     def _create_df(self, data, schema):
         return self.spark.createDataFrame(data, schema)
 
     def test_remove_outliers_happy_path(self):
-        """Тест: выбросы успешно ограничиваются границами IQR"""
+        """IQR bounds the outliers"""
         data = [(1,), (2,), (3,), (4,), (5,), (100,)]
         schema = StructType([StructField("value", IntegerType(), True)])
         df = self._create_df(data, schema)
@@ -43,9 +46,9 @@ class TestRemoveOutliers(unittest.TestCase):
         result_df = cap_outliers(df, ["value"])
         result_data = sorted([row.value for row in result_df.collect()])
 
-        self.assertNotEqual(result_data[-1], 100)
-        self.assertEqual(result_data[0], 1)
-        self.assertEqual(result_data[1], 2)
+        assert result_data[-1] != 100
+        assert result_data[0] == 1
+        assert result_data[1] == 2
 
     def test_non_numeric_column_raises_error(self):
         """Raises ValueError on non-numeric columns"""
@@ -53,7 +56,7 @@ class TestRemoveOutliers(unittest.TestCase):
         schema = StructType([StructField("text_col", StringType(), True)])
         df = self._create_df(data, schema)
 
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             cap_outliers(df, ["text_col"])
 
     def test_no_outliers(self):
@@ -67,7 +70,7 @@ class TestRemoveOutliers(unittest.TestCase):
         original_values = sorted([row.value for row in df.collect()])
         result_values = sorted([row.value for row in result_df.collect()])
 
-        self.assertEqual(original_values, result_values)
+        assert original_values == result_values
 
     def test_empty_dataframe(self):
         """Empty DataFrame -> returns empty DataFrame"""
@@ -75,7 +78,7 @@ class TestRemoveOutliers(unittest.TestCase):
         df = self._create_df([], schema)
 
         result_df = cap_outliers(df, ["value"])
-        self.assertEqual(result_df.count(), 0)
+        assert result_df.count() == 0
 
     def test_float_values(self):
         """Test floats"""
@@ -86,7 +89,7 @@ class TestRemoveOutliers(unittest.TestCase):
         result_df = cap_outliers(df, ["value"])
         result_data = [row.value for row in result_df.collect()]
 
-        self.assertNotIn(100.0, result_data)
+        assert 100.0 not in result_data
 
     def test_negative_outliers(self):
         """Test negative outliers"""
@@ -97,8 +100,4 @@ class TestRemoveOutliers(unittest.TestCase):
         result_df = cap_outliers(df, ["value"])
         result_data = [row.value for row in result_df.collect()]
 
-        self.assertNotIn(-100, result_data)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert -100 not in result_data
