@@ -2,7 +2,6 @@ import os
 import sys
 
 import pytest
-from pyspark.sql.session import SparkSession
 from pyspark.sql.types import (
     FloatType,
     IntegerType,
@@ -13,26 +12,24 @@ from pyspark.sql.types import (
 
 # TODO: move to utils
 from src.etl_pipeline.gold import cap_outliers
+from src.etl_pipeline.spark_config import get_spark_session
 
 os.environ["PYSPARK_PYTHON"] = sys.executable
 os.environ["PYSPARK_DRIVER_PYTHON"] = sys.executable
 os.environ["PYSPARK_DAEMON"] = "false"
 
 
+@pytest.fixture(scope="session")
+def spark_session():
+    spark = get_spark_session()
+    yield spark
+    spark.stop()
+
+
 class TestRemoveOutliers:
-    @classmethod
-    def setup_class(cls):
-        cls.spark = (
-            SparkSession.builder.master("local[1]").appName("IQRTest").getOrCreate()
-        )
-        cls.spark.sparkContext.setLogLevel("ERROR")
-
-    @classmethod
-    def teardown_class(cls):
-        cls.spark.stop()
-
-    def setup_method(self):
-        self.spark = self.__class__.spark
+    @pytest.fixture(autouse=True)
+    def _setup_spark(self, spark_session):
+        self.spark = spark_session
 
     def _create_df(self, data, schema):
         return self.spark.createDataFrame(data, schema)
