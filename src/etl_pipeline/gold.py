@@ -4,11 +4,9 @@ from pyspark.sql import DataFrame, Window, types
 
 
 def gold_layer(spark: pyspark.sql.SparkSession, source_path, target_path):
-    # Determine numeric columns and handle outliers
+    # Handle outliers
     df = spark.read.parquet(source_path)
-    numeric_cols = [
-        f.name for f in df.schema.fields if isinstance(f.dataType, types.NumericType)
-    ]
+    numeric_cols = ["Quantity", "UnitPrice"]
     df_enriched = cap_outliers(df, numeric_cols)
 
     df_enriched = (

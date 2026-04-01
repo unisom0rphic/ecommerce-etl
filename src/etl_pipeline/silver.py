@@ -15,6 +15,15 @@ def silver_layer(spark, source_path, target_path):
 
     df_clean = df.fillna({"CustomerID": "missing", "Description": "unknown"})
     df_clean = df_clean.drop_duplicates()
+
+    # Type conversion
+    df_clean = df_clean.withColumn("InvoiceNo", df_clean["InvoiceNo"].cast("bigint"))
+    df_clean = df_clean.withColumn("UnitPrice", df_clean["UnitPrice"].cast("float"))
+    df_clean = df_clean.withColumn("Quantity", df_clean["Quantity"].cast("int"))
+    df_clean = df_clean.withColumn(
+        "InvoiceDate", F.to_timestamp("InvoiceDate", "M/d/yyyy H:mm")
+    )
+
     df_clean = (
         df_clean.withColumn("Year", F.year("InvoiceDate"))
         .withColumn("Month", F.month("InvoiceDate"))
