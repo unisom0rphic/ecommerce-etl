@@ -12,7 +12,8 @@ def get_spark_session():
     os.environ["PATH"] = f"{os.environ['HADOOP_HOME']}\\bin;{os.environ['PATH']}"
 
     return (
-        SparkSession.builder.master("local")
+        # [1] for tests
+        SparkSession.builder.master("local[1]")
         .appName("E-Commerce ETL")
         .config("spark.sql.warehouse.dir", "spark-warehouse")
         .getOrCreate()
