@@ -57,7 +57,6 @@ def test_csv(spark_session):
 """
     print(f"Writing CSV to: {csv_path.absolute()}")
     print(f"Parent exists: {csv_path.parent.exists()}")
-    # FIXME: touch fails if the csv doesn't exist
     csv_path.touch(exist_ok=True)
     csv_path.write_text(csv_content)
 
@@ -73,14 +72,12 @@ class TestETLPipeline:
         self.spark = spark_session
 
     def _read_layer_data(self, layer_name):
-        # TODO: maybe a separate function?
         raw_warehouse = self.spark.conf.get("spark.sql.warehouse.dir")
-        # FIXME
+        # FIXME: I don't think just removing file:/ from path is reliable
         if raw_warehouse.startswith("file:/"):
             raw_warehouse = raw_warehouse.replace("file:/", "")
 
         warehouse_path = Path(raw_warehouse)
-        # fix!
         path = str(warehouse_path / "gold")
         print(f"Parquet path: {path}")
         try:
@@ -88,31 +85,24 @@ class TestETLPipeline:
         except Exception:
             raise RuntimeError(f"Unable to read parquet: {layer_name}\nPath: {path}")
 
+    # TODO: consider splitting this test into multiple ones
     def test_pipeline_cleans_outliers_and_nulls(self, spark_session, test_csv):
         """
-        Docstring for test_pipeline_cleans_outliers_and_nulls
+        Ensure pipeline handles outliers and nulls
         """
-        etl_pipeline("test")
+        etl_pipeline("test", self.spark)
 
-        # gold_df: DataFrame = self._read_layer_data("gold")
-        raw_warehouse = self.spark.conf.get("spark.sql.warehouse.dir")
-        if raw_warehouse.startswith("file:/"):
-            raw_warehouse = raw_warehouse.replace("file:/", "")
-        warehouse_path = Path(raw_warehouse)
-        path = str(warehouse_path / "gold")
+        gold_df: DataFrame = self._read_layer_data("gold")
 
-        gold_df: DataFrame = self.spark.read.parquet(path)
-
-        # TODO: should check for strings too
         null_counts_df = gold_df.select(
             [
-                F.sum(F.when(F.col(c).isNull() | F.isnan(c), 1).otherwise(0)).alias(c)
-                for c in ["Quantity", "UnitPrice"]
+                F.sum(F.when(F.col(c).isNull(), 1).otherwise(0)).alias(c)
+                for c in gold_df.columns
             ]
         )
-        null_counts = null_counts_df.collect()[0]
-        for count in null_counts:
-            assert count == 0, "Missing values found in Gold layer"
+        null_counts = zip(gold_df.columns, null_counts_df.collect()[0])
+        for col, count in null_counts:
+            assert count == 0, f"Missing values found in Gold layer:\nColumn {col}"
 
         # Outliers
         max_value = gold_df.select(F.max("Quantity")).collect()[0][0]
