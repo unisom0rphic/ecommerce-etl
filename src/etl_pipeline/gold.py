@@ -42,7 +42,10 @@ def gold_layer(spark: pyspark.sql.SparkSession, source_path, target_path):
 
     df_enriched = df_enriched.withColumn(
         "Days_Since_Last_Purchase",
-        F.datediff(F.col("InvoiceDate"), F.lag("InvoiceDate", 1).over(w_customer)),
+        F.coalesce(
+            F.datediff(F.col("InvoiceDate"), F.lag("InvoiceDate", 1).over(w_customer)),
+            F.lit(0),
+        ),
     )
 
     df_enriched = df_enriched.withColumn(
@@ -74,7 +77,7 @@ def gold_layer(spark: pyspark.sql.SparkSession, source_path, target_path):
     )
 
     df_enriched = df_enriched.withColumn(
-        "Lag_1_Quantity", F.lag("Quantity", 1).over(w_customer)
+        "Lag_1_Quantity", F.coalesce(F.lag("Quantity", 1).over(w_customer), F.lit(0))
     )
 
     # target variable
